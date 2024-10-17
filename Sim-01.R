@@ -218,24 +218,24 @@ print(t2-t1)
 # Create the stack for y1
 stk.y1 <- inla.stack(
   data = list(y = y.1, e = e.1),
-  A = list(A.m,A.m,A.m,1),
+  A = list(A.m,A.m,A.m,A.m),
   effects = list(
     spatial.field.sh = 1:nv,
     spatial.field.y1 = 1:nv,
     iid.y1 = 1:nv,
-    list(Intercept.y1 = rep(1, n.ar))
+    Intercept.y1 = rep(1, nv)
   ),
   tag = "y1")
 
 # Create the stack for y2
 stk.y2 <- inla.stack(
   data = list(y = y.2, e = e.2), 
-  A = list(A.m,A.m,A.m,1), 
+  A = list(A.m,A.m,A.m,A.m), 
   effects = list(
     sh.copy.y2 = 1:nv,
     spatial.field.y2 = 1:nv,
     iid.y2 = 1:nv,
-    list(Intercept.y2 = rep(1, n.ar))
+    Intercept.y2 = rep(1, nv)
   ),
   tag = "y2")
 
@@ -248,7 +248,7 @@ stk.y3 <- inla.stack(
     y2.copy.y3 = 1:nv,
     spatial.field.y3 = 1:nv,
     iid.y3 = 1:nv,
-    list(Intercept.y3 = rep(1, n.ar))
+    Intercept.y3 = rep(1, nv)
   ),
   tag = "y3")
 
@@ -258,10 +258,9 @@ A.pr <- inla.spde.make.A(mesh = mesh, loc = dp)
 stk.y1.pre <- inla.stack(tag = "y1.pre",
                          data = list(y = matrix(NA, nrow=nrow(dp),ncol=n.pp),
                                      e = rep(0,nrow(dp))),
-                         A = list(1, A.pr, A.pr, A.pr),
+                         A = list(A.pr, A.pr, A.pr, A.pr),
                          effects = list(
-                           data.frame(Intercept.y1 = rep(1, nrow(dp))
-                           ),
+                           Intercept.y1 = rep(1, nv),
                            spatial.field.sh = 1:nv,
                            spatial.field.y1 = 1:nv,
                            iid.y1 = 1:nv
@@ -271,10 +270,9 @@ stk.y1.pre <- inla.stack(tag = "y1.pre",
 stk.y2.pre <- inla.stack(tag = "y2.pre",
                          data = list(y = matrix(NA, nrow=nrow(dp),ncol=n.pp),
                                      e = rep(0,nrow(dp))),
-                         A = list(1, A.pr, A.pr, A.pr),
+                         A = list(A.pr, A.pr, A.pr, A.pr),
                          effects = list(
-                           data.frame(Intercept.y2 = rep(1, nrow(dp))
-                           ),           
+                           Intercept.y2 = rep(1, nv),           
                            sh.copy.y1 = 1:nv,
                            spatial.field.y2 = 1:nv,
                            iid.y2 = 1:nv
@@ -284,10 +282,9 @@ stk.y2.pre <- inla.stack(tag = "y2.pre",
 stk.y3.pre <- inla.stack(tag = "y3.pre",
                          data = list(y = matrix(NA, nrow=nrow(dp),ncol=n.pp),
                                      e = rep(0,nrow(dp))),
-                         A = list(1, A.pr, A.pr, A.pr, A.pr),
+                         A = list(A.pr, A.pr, A.pr, A.pr, A.pr),
                          effects = list(
-                           data.frame(Intercept.y3 = rep(1, nrow(dp))
-                           ),
+                           Intercept.y3 = rep(1, nv),
                            sh.copy.y1 = 1:nv,
                            y2.copy.y3 = 1:nv,
                            spatial.field.y3 = 1:nv,
@@ -412,8 +409,8 @@ dpdf$y2.iid <- res$summary.linear.predictor[idx.y2.iid, "mean"]
 dpdf$y3.iid <- res$summary.linear.predictor[idx.y3.iid, "mean"]
 
 plot1 <- ggplot(map) +
-  geom_tile(data = dpdf2[,c("x","y","lambda1")],
-            aes(x = x, y = y, fill = lambda1)) +
+  geom_tile(data = dpdf[,c("x","y","mean.y1")],
+            aes(x = x, y = y, fill = mean.y1)) +
   geom_sf(fill=NA,color="black") + coord_sf(datum = NA) +
   labs(x = "", y = "") +
   scale_fill_viridis("Pred") +
@@ -432,7 +429,7 @@ plot3 <- ggplot(map) +
             aes(x = x, y = y, fill = pop)) +
   geom_sf(fill=NA,color="black") + coord_sf(datum = NA) +
   labs(x = "", y = "") +
-  scale_fill_viridis("True") +
+  scale_fill_viridis("Pop") +
   theme_bw()
 
 grid.arrange(plot1,plot2,plot3, nrow=1)
