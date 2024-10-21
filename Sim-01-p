@@ -228,7 +228,7 @@ stk.y1 <- inla.stack(
     spatial.field.y1 = 1:nv,
     iid.y1 = 1:nv,
     Intercept.y1 = rep(1, nv),
-    pop = (1/mesh_sf$pop)**2
+    pop = (1/mesh_sf$pop)
   ),
   tag = "y1")
 
@@ -241,7 +241,7 @@ stk.y2 <- inla.stack(
     spatial.field.y2 = 1:nv,
     iid.y2 = 1:nv,
     Intercept.y2 = rep(1, nv),
-    pop = (1/mesh_sf$pop)**2
+    pop = (1/mesh_sf$pop)
   ),
   tag = "y2")
 
@@ -255,7 +255,7 @@ stk.y3 <- inla.stack(
     spatial.field.y3 = 1:nv,
     iid.y3 = 1:nv,
     Intercept.y3 = rep(1, nv),
-    pop = (1/mesh_sf$pop)**2
+    pop = (1/mesh_sf$pop)
   ),
   tag = "y3")
 
@@ -271,7 +271,7 @@ stk.y1.pre <- inla.stack(tag = "y1.pre",
                            spatial.field.sh = 1:nv,
                            spatial.field.y1 = 1:nv,
                            iid.y1 = 1:nv,
-                           pop = (1/dpdf2$pop)**2
+                           pop = (1/dpdf2$pop)
                          ))
 
 # Stack for predicting y2
@@ -284,7 +284,7 @@ stk.y2.pre <- inla.stack(tag = "y2.pre",
                            sh.copy.y1 = 1:nv,
                            spatial.field.y2 = 1:nv,
                            iid.y2 = 1:nv,
-                           pop = (1/dpdf2$pop)**2
+                           pop = (1/dpdf2$pop)
                            ))
 
 # Stack for predicting y3
@@ -298,7 +298,7 @@ stk.y3.pre <- inla.stack(tag = "y3.pre",
                            y2.copy.y3 = 1:nv,
                            spatial.field.y3 = 1:nv,
                            iid.y3 = 1:nv,
-                           pop = (1/dpdf2$pop)**2
+                           pop = (1/dpdf2$pop)
                            ))
 
 # Stack with shared effect
