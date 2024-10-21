@@ -63,22 +63,31 @@ z3 <- book.rMatern(1, dp_pre, range = range[3],
 z4 <- book.rMatern(1, dp_pre, range = range[4],
                    sigma = sqrt(m.var[4]))
 
+ps <- st_as_sf(as.data.frame(dp_pre), coords = 1:2)
+ps[c("z1", "z2", "z3", "z4")] <- list(z1, z2, z3, z4)
+plot(ps, pch = 19)
 
 theta1 <- exp(alpha[1] + z1 + z2 +rnorm(nrow(dp_pre), 0, e.sd[1]))
 theta2 <- exp(alpha[2] + beta[1] * z1 + z3 + rnorm(nrow(dp_pre), 0, e.sd[2]))
 theta3 <- exp(alpha[3] + beta[2] * z1 + beta[3] * z3 + z4 + 
             rnorm(nrow(dp_pre), 0, e.sd[3]))
 
+ps[c("theta1", "theta2", "theta3")] <- list(theta1, theta2, theta3)
 
+select(ps, matches("theta")) |>
+    mutate(across(matches("theta"), log)) |>
+    plot(pch = 19)
+
+N <- 1000
 dpdf2 <- as.data.frame(dp_pre)
 names(dpdf2) <- c("x","y")
 dpdf2$theta1 <- theta1
 dpdf2$theta2 <- theta2
 dpdf2$theta3 <- theta3
-dpdf2$pop <- ((1/resolution1)**2)*100000
-dpdf2$lambda1 <- theta1*((1/resolution1)**2)*100000
-dpdf2$lambda2 <- theta2*((1/resolution1)**2)*100000
-dpdf2$lambda3 <- theta3*((1/resolution1)**2)*100000
+dpdf2$pop <- ((1/resolution1)**2)*N
+dpdf2$lambda1 <- theta1*((1/resolution1)**2)*N
+dpdf2$lambda2 <- theta2*((1/resolution1)**2)*N
+dpdf2$lambda3 <- theta3*((1/resolution1)**2)*N
 dpdf2$e1 <- ((1/resolution1)**2)*sum(dpdf2$lambda1)
 dpdf2$e2 <- ((1/resolution1)**2)*sum(dpdf2$lambda2)
 dpdf2$e3 <- ((1/resolution1)**2)*sum(dpdf2$lambda3)
@@ -109,20 +118,21 @@ plot3 <- ggplot(boundary) + geom_sf() + coord_sf(datum = NA) +
 pplotm1 <- grid.arrange(plot1,plot2, plot3, nrow=1)
 
 ## paso simulación
+dpdf2$theta1
 set.seed(1234)
-im.1 <- as.im(list(x=x,y=x,z=matrix(dpdf2$lambda1,nrow=resolution1)))
+im.1 <- as.im(list(x=x,y=x,z=matrix(dpdf2$lambda1 * resolution1**2,nrow=resolution1)))
 cases.y1 <- st_as_sf(coords(rpoispp(im.1)),coords = c("x","y"))
 cases.y1$y1 <- 1
 cases.y1$y2 <- 0
 cases.y1$y3 <- 0
 
-im.2 <- as.im(list(x=x,y=x,z=matrix(dpdf2$lambda2,nrow=resolution1)))
+im.2 <- as.im(list(x=x,y=x,z=matrix(dpdf2$lambda2 * resolution1**2,nrow=resolution1)))
 cases.y2 <- st_as_sf(coords(rpoispp(im.2)),coords = c("x","y"))
 cases.y2$y1 <- 0
 cases.y2$y2 <- 1
 cases.y2$y3 <- 0
 
-im.y3 <- as.im(list(x=x,y=x,z=matrix(dpdf2$lambda3,nrow=resolution1)))
+im.y3 <- as.im(list(x=x,y=x,z=matrix(dpdf2$lambda3 * resolution1**2,nrow=resolution1)))
 cases.y3 <- st_as_sf(coords(rpoispp(im.y3)),coords = c("x","y"))
 cases.y3$y1 <- 0
 cases.y3$y2 <- 0
@@ -131,7 +141,7 @@ cases.y3$y3 <- 1
 cases <- rbind(cases.y1,cases.y2,cases.y3)
 
 voronoi_sf <- st_as_sf(voronoi)
-voronoi_sf$pop <- round(st_area(voronoi_sf)*100000,0)
+voronoi_sf$pop <- round(st_area(voronoi_sf)*N,0)
 voronoi_int <- st_intersection(voronoi_sf,cases)
 values <- as.data.frame(voronoi_int)
 values_agg <- aggregate(values[,c("y1","y2","y3")], by=list(values$id), sum)
@@ -216,7 +226,7 @@ for (i in 1:n.ar){
 t2 <-Sys.time()
 print(t2-t1)
 
-mesh_sf[,"pop"] <- 100000*(1/sum(mesh_sf$flag,na.rm=TRUE))*mesh_sf$flag
+mesh_sf[,"pop"] <- N*(1/sum(mesh_sf$flag,na.rm=TRUE))*mesh_sf$flag
 
 # Stack for estimatio
 # Create the stack for y1
@@ -228,7 +238,7 @@ stk.y1 <- inla.stack(
     spatial.field.y1 = 1:nv,
     iid.y1 = 1:nv,
     Intercept.y1 = rep(1, nv),
-    pop = (1/mesh_sf$pop)
+    pop = (1/mesh_sf$pop)**2
   ),
   tag = "y1")
 
@@ -241,7 +251,7 @@ stk.y2 <- inla.stack(
     spatial.field.y2 = 1:nv,
     iid.y2 = 1:nv,
     Intercept.y2 = rep(1, nv),
-    pop = (1/mesh_sf$pop)
+    pop = (1/mesh_sf$pop)**2
   ),
   tag = "y2")
 
@@ -255,7 +265,7 @@ stk.y3 <- inla.stack(
     spatial.field.y3 = 1:nv,
     iid.y3 = 1:nv,
     Intercept.y3 = rep(1, nv),
-    pop = (1/mesh_sf$pop)
+    pop = (1/mesh_sf$pop)**2
   ),
   tag = "y3")
 
@@ -271,7 +281,7 @@ stk.y1.pre <- inla.stack(tag = "y1.pre",
                            spatial.field.sh = 1:nv,
                            spatial.field.y1 = 1:nv,
                            iid.y1 = 1:nv,
-                           pop = (1/dpdf2$pop)
+                           pop = (1/dpdf2$pop)**2
                          ))
 
 # Stack for predicting y2
@@ -284,7 +294,7 @@ stk.y2.pre <- inla.stack(tag = "y2.pre",
                            sh.copy.y1 = 1:nv,
                            spatial.field.y2 = 1:nv,
                            iid.y2 = 1:nv,
-                           pop = (1/dpdf2$pop)
+                           pop = (1/dpdf2$pop)**2
                            ))
 
 # Stack for predicting y3
@@ -298,7 +308,7 @@ stk.y3.pre <- inla.stack(tag = "y3.pre",
                            y2.copy.y3 = 1:nv,
                            spatial.field.y3 = 1:nv,
                            iid.y3 = 1:nv,
-                           pop = (1/dpdf2$pop)
+                           pop = (1/dpdf2$pop)**2
                            ))
 
 # Stack with shared effect
